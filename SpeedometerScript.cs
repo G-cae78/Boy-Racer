@@ -24,7 +24,7 @@ public class SpeedometerScript : MonoBehaviour
         }
        
         // Get the current speed in km/h
-        int currSpeed = Mathf.RoundToInt(car.linearVelocity.magnitude * 3.6f); // Unity units to km/h
+        int currSpeed = Mathf.RoundToInt(car.linearVelocity.magnitude); // Unity units to km/h
         speedkmh.text = currSpeed + " Km/h";//writing speed inside speedometer
 
         // Calculate the needle's rotation angle

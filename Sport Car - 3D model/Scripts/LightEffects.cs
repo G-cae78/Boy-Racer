@@ -4,6 +4,8 @@ using UnityEngine;
 
 public class LightEffects : MonoBehaviour {
 
+    public static LightEffects instance;
+
     public bool on = false;
     public bool on2 = false;
     public bool on3 = false;
