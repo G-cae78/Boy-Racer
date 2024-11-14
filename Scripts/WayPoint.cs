@@ -6,6 +6,7 @@ public class WaypointCar : MonoBehaviour
     public float speed = 10f;
     public float rotationSpeed = 2f; // Adjust for faster/slower turning
     private int currentWaypointIndex = 0;
+    private FrontWheelScript wheelScript;
     // Start is called once before the first execution of Update after the MonoBehaviour is created
     void Start()
     {
@@ -28,7 +29,9 @@ public class WaypointCar : MonoBehaviour
 
         // Move towards the waypoint
         transform.position = Vector3.MoveTowards(transform.position, targetWaypoint.position, step);
-
+         if(wheelScript!=null){
+            wheelScript.waypoint=targetWaypoint;
+         }
         // Check if the AI car reached the waypoint
         if (Vector3.Distance(transform.position, targetWaypoint.position) < 0.1f)
         {

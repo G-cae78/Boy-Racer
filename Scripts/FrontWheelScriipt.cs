@@ -12,6 +12,9 @@ public class FrontWheelScript : MonoBehaviour
     public float steerTorque = 4000f;
     public float steerAngle = 30f;
 
+    public bool aiControlled=false;
+    public Transform waypoint;
+
     void Start()
     {
         if (rigid == null)
@@ -62,5 +65,18 @@ public class FrontWheelScript : MonoBehaviour
 
         frontLeftWheel.localRotation = Quaternion.Euler(0, steerInput * steerAngle, 0);
         frontRightWheel.localRotation = Quaternion.Euler(0, steerInput * steerAngle, 0);
+    }
+    void isAIControlledCar(){
+        if(waypoint==null){
+            return;
+        }
+        //calculate the direction the AI is moving in to next waypoint
+        Vector3 direction=(waypoint.position-transform.position).normalized;
+        float angle= Vector3.SignedAngle(transform.forward,direction,Vector3.up);
+        float steerInput= Mathf.Clamp(angle /90f,-1f,1f);//normalizing the angle
+
+        //Finally rotating wheels
+        frontLeftWheel.localRotation= Quaternion.Euler(0,steerInput*steerAngle,0);
+        frontRightWheel.localRotation= Quaternion.Euler(0,steerInput*steerAngle,0);
     }
 }
