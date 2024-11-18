@@ -1,4 +1,6 @@
+using TMPro;
 using Unity.VisualScripting;
+using UnityEditor.ShaderGraph;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -14,9 +16,11 @@ public class GameManagerScript : MonoBehaviour
     public Button pause;
     public bool enterMenu;
     private bool movingFaster;
-     public AudioSource source;
+    public AudioSource source;
     public AudioClip accelerate;
     public AudioClip idle;
+    private float carCurrHeight;
+    //public TMP_Text startCount;
    
 
   //  public 
@@ -33,6 +37,7 @@ public class GameManagerScript : MonoBehaviour
     source.clip = idle;
     source.Play();
     movingFaster = false;
+    //startCountDown();
 
     // // Set initial positions for the car and bot
     // GameObject player= Instantiate(playerCar);
@@ -62,6 +67,10 @@ public class GameManagerScript : MonoBehaviour
             movingFaster = false;
             changeAudio();
         }
+         carCurrHeight=playerCar.transform.position.y;
+          if(carCurrHeight > 10f){
+            respawn();
+          }
     }
     public void pauseControl(){
         if(enterMenu==true){
@@ -93,5 +102,13 @@ public class GameManagerScript : MonoBehaviour
             source.clip = idle;
             source.Play();
         }
+    }
+    public void respawn(){
+       
+        Debug.Log(carCurrHeight);
+       
+     
+        playerCar.transform.position= new Vector3(playerCar.transform.position.x,0f,playerCar.transform.position.z);
+       
     }
 }

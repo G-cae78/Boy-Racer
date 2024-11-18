@@ -7,15 +7,18 @@ public class WaypointCar : MonoBehaviour
     public float rotationSpeed = 2f; // Adjust for faster/slower turning
     private int currentWaypointIndex = 0;
     private FrontWheelScript wheelScript;
+    private float raceStartTime=3f;
+    private float spawntime;
     // Start is called once before the first execution of Update after the MonoBehaviour is created
     void Start()
     {
-        
+        spawntime=Time.time;
     }
 
     // Update is called once per frame
     void Update()
     {
+        if(Time.time>spawntime+raceStartTime){
         // Move towards the current waypoint
         if (waypoints.Length == 0) return; // Exit if no waypoints are set
 
@@ -38,5 +41,6 @@ public class WaypointCar : MonoBehaviour
             // Move to the next waypoint, looping back to the start if needed
             currentWaypointIndex = (currentWaypointIndex + 1) % waypoints.Length;
         }
+    }
     }
 }
