@@ -1,103 +1,127 @@
 using System.Collections;
-using TMPro;
 using UnityEngine;
+using TMPro;
 
 public class PlayerCar : MonoBehaviour
 {
-    public Rigidbody rigid;
-    public GameObject gameCam;
-    public float followSpeed = 1f;
-    public ParticleSystem flameParticleSystem;
+    public WheelCollider frontLeftWheel;
+    public WheelCollider frontRightWheel;
+    public WheelCollider rearLeftWheel;
+    public WheelCollider rearRightWheel;
+
+    public Transform frontLeftTransform;
+    public Transform frontRightTransform;
+    public Transform rearLeftTransform;
+    public Transform rearRightTransform;
+
+    public float motorForce = 1500f;
+    public float brakeForce = 3000f;
+    public float maxSteeringAngle = 30f;
+
+    private float currentSteeringAngle;
+    private float currentBrakeForce;
+    private bool isBraking;
+
     public TMP_Text countDown;
     private bool finishedCountDown;
-    private OnScreenWheelScript wheelScript;
 
-    // Start is called before the first execution of Update
     void Start()
     {
-        Debug.Log("Mass:" + rigid.mass);
-        finishedCountDown=false;
-        StartCoroutine(startCountDown());
+        finishedCountDown = false;
+        StartCoroutine(StartCountDown());
+        Rigidbody rb = GetComponent<Rigidbody>();
+        rb.mass = 1500f;
+        rb.linearDamping = 0.05f;
+        rb.angularDamping = 0.1f;
+        rb.centerOfMass = new Vector3(0, -0.5f, 0); // Adjust the center of mass for stability
     }
 
-    // Update is called once per frame
     void Update()
     {
-        // Existing keyboard controls (keep these if you also want to support keyboard input)
-    if(finishedCountDown){
-    if (Input.GetKey(KeyCode.UpArrow))
-    {
-        MoveForward();
-    }
-    else if (Input.GetKey(KeyCode.DownArrow))
-    {
-        MoveBackward();
-    }
-    
-    if (Input.GetKey(KeyCode.LeftArrow))
-    {
-        TurnLeft();
-    }
-    else if (Input.GetKey(KeyCode.RightArrow))
-    {
-        TurnRight();
-    }
-    if(wheelScript!=null && wheelScript.beingUsed){
-        float steering=wheelScript.wheelRotation/wheelScript.maxSteeringAngle;
-        Debug.Log(steering);
-        rigid.AddTorque(Vector3.up * steering * (rigid.mass *Time.fixedDeltaTime * 4000f));
-    }
-    }
-
-    }
-
-    // Public methods for button input
-    public void MoveForward()
-    {
-        rigid.AddForce(transform.forward * (rigid.mass * Time.fixedDeltaTime * 1000f));
-        if (!flameParticleSystem.isPlaying)
+        if (finishedCountDown)
         {
-            flameParticleSystem.Play();
+            GetInput();
+            HandleMotor();
+            HandleSteering();
+            UpdateWheelPoses();
+            ApplyDownforce();
         }
     }
 
-    public void MoveBackward()
+    private void GetInput()
     {
-        rigid.AddForce(-transform.forward * (rigid.mass * Time.fixedDeltaTime * 1000f));
+        isBraking = Input.GetKey(KeyCode.Space);
     }
 
-    public void TurnLeft()
+    private void HandleMotor()
     {
-        rigid.AddTorque(-Vector3.up * (rigid.mass * Time.fixedDeltaTime * 4000f));
+        float motorInput = Input.GetAxis("Vertical");
+        frontLeftWheel.motorTorque = motorInput * motorForce;
+        frontRightWheel.motorTorque = motorInput * motorForce;
+
+        currentBrakeForce = isBraking ? brakeForce : 0f;
+        ApplyBraking();
     }
 
-    public void TurnRight()
+    private void ApplyBraking()
     {
-        rigid.AddTorque(Vector3.up * (rigid.mass * Time.fixedDeltaTime * 4000f));
+        frontLeftWheel.brakeTorque = currentBrakeForce;
+        frontRightWheel.brakeTorque = currentBrakeForce;
+        rearLeftWheel.brakeTorque = currentBrakeForce;
+        rearRightWheel.brakeTorque = currentBrakeForce;
     }
 
-   private IEnumerator startCountDown(){
-    //setting initial color and number to be displayed for each countdown second
-    countDown.text="3";
-    countDown.color=Color.red;
-    yield return new WaitForSeconds(1f);
+    private void HandleSteering()
+    {
+        float steeringInput = Input.GetAxis("Horizontal");
+        currentSteeringAngle = steeringInput * maxSteeringAngle;
+        frontLeftWheel.steerAngle = currentSteeringAngle;
+        frontRightWheel.steerAngle = currentSteeringAngle;
+    }
 
-    countDown.text="2";
-    countDown.color=Color.Lerp(Color.red,Color.yellow,0.5f);//setting color to be between red and yellow
-    finishedCountDown=true;
-    yield return new WaitForSeconds(1f);
+    private void UpdateWheelPoses()
+    {
+        UpdateWheelPose(frontLeftWheel, frontLeftTransform);
+        UpdateWheelPose(frontRightWheel, frontRightTransform);
+        UpdateWheelPose(rearLeftWheel, rearLeftTransform);
+        UpdateWheelPose(rearRightWheel, rearRightTransform);
+    }
 
-    countDown.text="1";
-    countDown.color=Color.yellow;
-    yield return new WaitForSeconds(1f);
+    private void UpdateWheelPose(WheelCollider wheelCollider, Transform transform)
+    {
+        Vector3 pos;
+        Quaternion quat;
+        wheelCollider.GetWorldPose(out pos, out quat);
+        transform.position = pos;
+        transform.rotation = quat;
+    }
 
-    countDown.text="GO!!";
-    countDown.color=Color.green;
-    yield return new WaitForSeconds(1f);
+    private IEnumerator StartCountDown()
+    {
+        countDown.text = "3";
+        countDown.color = Color.red;
+        yield return new WaitForSeconds(1f);
 
-    countDown.text=" ";//hide text bpox after go
-    finishedCountDown=true;
-    
- }
+        countDown.text = "2";
+        countDown.color = Color.Lerp(Color.red, Color.yellow, 0.5f);
+        yield return new WaitForSeconds(1f);
+
+        countDown.text = "1";
+        countDown.color = Color.yellow;
+        yield return new WaitForSeconds(1f);
+
+        countDown.text = "GO!!";
+        countDown.color = Color.green;
+        yield return new WaitForSeconds(1f);
+
+        countDown.text = "";
+        finishedCountDown = true;
+    }
+    public float downForce = 50f;
+
+    private void ApplyDownforce()
+    {
+    GetComponent<Rigidbody>().AddForce(-transform.up * downForce * GetComponent<Rigidbody>().linearVelocity.magnitude);
+    }
 
 }
