@@ -1,127 +1,58 @@
 using System.Collections;
+using System.Collections.Generic;
 using UnityEngine;
-using TMPro;
 
 public class PlayerCar : MonoBehaviour
 {
-    public WheelCollider frontLeftWheel;
-    public WheelCollider frontRightWheel;
-    public WheelCollider rearLeftWheel;
-    public WheelCollider rearRightWheel;
-
-    public Transform frontLeftTransform;
-    public Transform frontRightTransform;
-    public Transform rearLeftTransform;
-    public Transform rearRightTransform;
-
-    public float motorForce = 1500f;
-    public float brakeForce = 3000f;
-    public float maxSteeringAngle = 30f;
-
-    private float currentSteeringAngle;
-    private float currentBrakeForce;
-    private bool isBraking;
-
-    public TMP_Text countDown;
-    private bool finishedCountDown;
+    public Rigidbody rigid;               // Rigidbody for physics-based movement
+    public float acceleration = 3000f;    // Force applied for forward/backward motion
+    public float maxSpeed = 20f;          // Max speed of the car
+    public float turnTorque = 500f;       // Torque applied for turning
+    public float brakeForce = 0.5f;       // Brake strength (0 to 1)
+    public float drag = 100f;               // Drag to simulate friction
 
     void Start()
     {
-        finishedCountDown = false;
-        StartCoroutine(StartCountDown());
-        Rigidbody rb = GetComponent<Rigidbody>();
-        rb.mass = 1500f;
-        rb.linearDamping = 0.05f;
-        rb.angularDamping = 0.1f;
-        rb.centerOfMass = new Vector3(0, -0.5f, 0); // Adjust the center of mass for stability
+        // Initialize Rigidbody
+        rigid = GetComponent<Rigidbody>();
+        rigid.linearDamping = drag; // Set linear drag
+        rigid.angularDamping = drag; // Set angular drag
+        rigid.collisionDetectionMode = CollisionDetectionMode.Continuous;
+
+        // Ensure the Rigidbody doesn’t move in Y-axis
+        rigid.constraints = RigidbodyConstraints.FreezeRotationZ | RigidbodyConstraints.FreezeRotationX | RigidbodyConstraints.FreezePositionY;
     }
 
-    void Update()
+    void FixedUpdate()
     {
-        if (finishedCountDown)
+        // Get input
+        float verticalInput = 0f;
+        float horizontalInput = 0f;
+        if (Input.GetKey(KeyCode.UpArrow)) verticalInput = 1f;    // Forward
+        else if (Input.GetKey(KeyCode.DownArrow)){ 
+            verticalInput = -1f; // Reverse
+        }
+
+        else if (Input.GetKey(KeyCode.LeftArrow)) horizontalInput = -1f; // Left
+        else if (Input.GetKey(KeyCode.RightArrow)) horizontalInput = 1f; // Right
+
+        // Limit the car's forward speed
+        if (rigid.linearVelocity.magnitude < maxSpeed)
         {
-            GetInput();
-            HandleMotor();
-            HandleSteering();
-            UpdateWheelPoses();
-            ApplyDownforce();
+            rigid.AddForce(transform.forward * verticalInput*2 * acceleration * Time.fixedDeltaTime, ForceMode.Acceleration);
+        }
+
+        // Apply torque for turning
+        if (verticalInput != 0) // Turn only while moving
+        {
+            rigid.AddTorque(Vector3.up * horizontalInput * turnTorque * Time.fixedDeltaTime, ForceMode.Acceleration);
+        }
+
+        // Apply brakes if no input is given
+        if (verticalInput == 0)
+        {
+            rigid.linearVelocity = Vector3.Lerp(rigid.linearVelocity, Vector3.zero, brakeForce * Time.fixedDeltaTime);
+            rigid.angularVelocity = Vector3.Lerp(rigid.angularVelocity, Vector3.zero, brakeForce * Time.fixedDeltaTime);
         }
     }
-
-    private void GetInput()
-    {
-        isBraking = Input.GetKey(KeyCode.Space);
-    }
-
-    private void HandleMotor()
-    {
-        float motorInput = Input.GetAxis("Vertical");
-        frontLeftWheel.motorTorque = motorInput * motorForce;
-        frontRightWheel.motorTorque = motorInput * motorForce;
-
-        currentBrakeForce = isBraking ? brakeForce : 0f;
-        ApplyBraking();
-    }
-
-    private void ApplyBraking()
-    {
-        frontLeftWheel.brakeTorque = currentBrakeForce;
-        frontRightWheel.brakeTorque = currentBrakeForce;
-        rearLeftWheel.brakeTorque = currentBrakeForce;
-        rearRightWheel.brakeTorque = currentBrakeForce;
-    }
-
-    private void HandleSteering()
-    {
-        float steeringInput = Input.GetAxis("Horizontal");
-        currentSteeringAngle = steeringInput * maxSteeringAngle;
-        frontLeftWheel.steerAngle = currentSteeringAngle;
-        frontRightWheel.steerAngle = currentSteeringAngle;
-    }
-
-    private void UpdateWheelPoses()
-    {
-        UpdateWheelPose(frontLeftWheel, frontLeftTransform);
-        UpdateWheelPose(frontRightWheel, frontRightTransform);
-        UpdateWheelPose(rearLeftWheel, rearLeftTransform);
-        UpdateWheelPose(rearRightWheel, rearRightTransform);
-    }
-
-    private void UpdateWheelPose(WheelCollider wheelCollider, Transform transform)
-    {
-        Vector3 pos;
-        Quaternion quat;
-        wheelCollider.GetWorldPose(out pos, out quat);
-        transform.position = pos;
-        transform.rotation = quat;
-    }
-
-    private IEnumerator StartCountDown()
-    {
-        countDown.text = "3";
-        countDown.color = Color.red;
-        yield return new WaitForSeconds(1f);
-
-        countDown.text = "2";
-        countDown.color = Color.Lerp(Color.red, Color.yellow, 0.5f);
-        yield return new WaitForSeconds(1f);
-
-        countDown.text = "1";
-        countDown.color = Color.yellow;
-        yield return new WaitForSeconds(1f);
-
-        countDown.text = "GO!!";
-        countDown.color = Color.green;
-        yield return new WaitForSeconds(1f);
-
-        countDown.text = "";
-        finishedCountDown = true;
-    }
-    public float downForce = 50f;
-
-    private void ApplyDownforce()
-    {
-    GetComponent<Rigidbody>().AddForce(-transform.up * downForce * GetComponent<Rigidbody>().linearVelocity.magnitude);
-    }
-
 }

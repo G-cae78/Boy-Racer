@@ -12,13 +12,15 @@ public class WaypointCar : MonoBehaviour
     // Start is called once before the first execution of Update after the MonoBehaviour is created
     void Start()
     {
-        spawntime=Time.time;
+        
     }
 
     // Update is called once per frame
     void Update()
     {
-        if(Time.time>spawntime+raceStartTime){
+        if(GameManagerScript.CurrentGameState==GameManagerScript.GAMESTATES.PLAYING){
+            spawntime=Time.time;
+            if(Time.time>spawntime+raceStartTime){ 
         // Move towards the current waypoint
         if (waypoints.Length == 0) return; // Exit if no waypoints are set
 
@@ -42,5 +44,6 @@ public class WaypointCar : MonoBehaviour
             currentWaypointIndex = (currentWaypointIndex + 1) % waypoints.Length;
         }
     }
+        }
     }
 }

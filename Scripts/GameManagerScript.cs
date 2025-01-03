@@ -1,3 +1,4 @@
+using System.Collections;
 using TMPro;
 using Unity.VisualScripting;
 using UnityEditor.ShaderGraph;
@@ -6,19 +7,29 @@ using UnityEngine.UI;
 
 public class GameManagerScript : MonoBehaviour
 {
-    public static GameManagerScript gameManager;
+    public enum GAMESTATES{
+        MENU,
+        PLAYING,
+        PAUSE
+    }
+    public static GameManagerScript instance;
+    public static GAMESTATES gameState = GAMESTATES.MENU;
+    public static GAMESTATES CurrentGameState = GAMESTATES.MENU;
+    public GameObject GameMenuCanvas, PlayingCanvas,PauseCanvas,ControlCanvas;
+    public TMP_Text countDown;
 
     public GameObject playerCar;
-    public GameObject bot1;
-    public GameObject bot2;
+    //public GameObject bot1;
+    //public GameObject bot2;
+   // public TMP_Text Laps;
 
-    public GameObject gameMenu;
+    //public GameObject gameMenu;
     public Button pause;
-    public bool enterMenu;
+    public bool paused;
     private bool movingFaster;
-    public AudioSource source;
-    public AudioClip accelerate;
-    public AudioClip idle;
+    public  AudioSource source;
+    public  AudioClip accelerate;
+    public  AudioClip idle;
     private float carCurrHeight;
     //public TMP_Text startCount;
    
@@ -29,14 +40,12 @@ public class GameManagerScript : MonoBehaviour
     // Start is called once before the first execution of Update after the MonoBehaviour is created
     void Start()
 { 
-    enterMenu = false;
-    gameMenu.SetActive(false);
+    instance=this;
+    paused = false;
+    SetGameState(GAMESTATES.MENU);
     Debug.Log("Playing idle audio");
 
-    // Assigning and playing idle audio
-    source.clip = idle;
-    source.Play();
-    movingFaster = false;
+   
     //startCountDown();
 
     // // Set initial positions for the car and bot
@@ -48,6 +57,60 @@ public class GameManagerScript : MonoBehaviour
     // bot22.transform.position= new Vector3(-147.3f,-0.3f,43.9f);
     // bot22.transform.position= new Vector3(0,-22f,0f);
 }
+public void startGame(){
+  SetGameState(GAMESTATES.PLAYING);
+
+  Debug.Log("Switched to playing state");
+  StartCoroutine(StartCountDown());
+}
+private IEnumerator StartCountDown()
+    {
+        // Show the countdown numbers
+        countDown.gameObject.SetActive(true);
+
+        for (int i = 3; i > 0; i--)
+        {
+            countDown.text = i.ToString(); // Display "3", "2", "1"
+            yield return new WaitForSeconds(1f);
+        }
+
+        countDown.text = "GO!"; // Display "GO!" at the end
+        yield return new WaitForSeconds(1f);
+
+        countDown.gameObject.SetActive(false); // Hide the countdown
+        //SetGameState(GAMESTATES.PLAYING); // Transition to playing state
+    }
+public static void SetGameState(GAMESTATES state)
+{
+    gameState = state;
+    Debug.Log(state);
+    if (instance == null) return;
+
+    switch (state)
+    {
+        case GAMESTATES.MENU:
+            if (instance.GameMenuCanvas) instance.GameMenuCanvas.SetActive(true);
+            if (instance.PlayingCanvas) instance.PlayingCanvas.SetActive(false);
+            if (instance.PauseCanvas) instance.PauseCanvas.SetActive(false);
+            CurrentGameState=GAMESTATES.MENU;
+            break;
+
+        case GAMESTATES.PLAYING:
+            if (instance.PlayingCanvas) instance.PlayingCanvas.SetActive(true);
+            if (instance.GameMenuCanvas) instance.GameMenuCanvas.SetActive(false);
+            if (instance.PauseCanvas) instance.PauseCanvas.SetActive(false);
+            CurrentGameState=GAMESTATES.PLAYING;
+            break;
+
+        case GAMESTATES.PAUSE:
+            if (instance.PauseCanvas) instance.PauseCanvas.SetActive(true);
+            if (instance.GameMenuCanvas) instance.GameMenuCanvas.SetActive(false);
+            if (instance.PlayingCanvas) instance.PlayingCanvas.SetActive(false);
+            CurrentGameState=GAMESTATES.PAUSE;
+            break;
+    }
+}
+
 
     // Update is called once per frame
     void FixedUpdate()
@@ -72,20 +135,27 @@ public class GameManagerScript : MonoBehaviour
             respawn();
           }
     }
-    public void pauseControl(){
-        if(enterMenu==true){
-            enterMenu=false;
-            gameMenu.SetActive(false);
-        }
-        else{ 
-        enterMenu=true;
-        menu();
-        }
+    public void pauseGame(){
+        SetGameState(GAMESTATES.PAUSE);
     }
-    public void menu(){
-        if(enterMenu)
-        gameMenu.SetActive(true);
-    } 
+    public void resumeGame()
+{
+    if (gameState == GAMESTATES.PAUSE)
+    {
+        Debug.Log("Resuming game...");
+        SetGameState(GAMESTATES.PLAYING);
+    }
+}
+
+    public void quitGame(){
+        SetGameState(GAMESTATES.MENU);
+    }
+    public void viewControls()
+    {
+    Debug.Log("Activating ControlCanvas...");
+    if (ControlCanvas != null) ControlCanvas.SetActive(true);
+    }
+
     public void changeAudio()
     {
         if (movingFaster && source.clip != accelerate)

@@ -7,7 +7,7 @@ public class CamFollowPlayer : MonoBehaviour
     public float moveCam = 50f;
     public float followSpeed = 5f;
 
-    private Vector3 followOffset = new Vector3(0f, 5f, -15f);
+    private Vector3 followOffset = new Vector3(0f, 5f, -10f);
     private Vector3 inspectionOffset = Vector3.zero;
 
     void FixedUpdate()
