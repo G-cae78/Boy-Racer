@@ -1,225 +1,244 @@
 using System.Collections;
 using TMPro;
-using Unity.VisualScripting;
-using UnityEditor.ShaderGraph;
 using UnityEngine;
 using UnityEngine.UI;
 
 public class GameManagerScript : MonoBehaviour
 {
-    public enum GAMESTATES{ //declaring enum to store the game states
+    public enum GAMESTATES
+    { // Declaring enum to store the game states
         MENU,
         PLAYING,
         PAUSE,
         LEADERBOARD
     }
-    public static GameManagerScript instance;//creatibg instance of script to it can be accessed publically
+
+    public static GameManagerScript instance; // Creating instance of script so it can be accessed publicly
     public static GAMESTATES gameState = GAMESTATES.MENU;
     public static GAMESTATES CurrentGameState = GAMESTATES.MENU;
-    public GameObject GameMenuCanvas, PlayingCanvas,PauseCanvas,ControlCanvas,LeaderBoardCanvas;
-    public TMP_Text countDown;//on screen countdown for race to start
 
-//Car Gameobjects
+    public GameObject GameMenuCanvas, PlayingCanvas, PauseCanvas, ControlCanvas, LeaderBoardCanvas;
+    public TMP_Text countDown; // On-screen countdown for race to start
+
+    // Player Car GameObject
     public GameObject playerCar;
-    public GameObject bot1;
-    public GameObject bot2;
-    public GameObject bot3;
-    public GameObject bot4;
-    public GameObject bot5;
-//Storing initial positions for each car game object
-    public Transform initialPos1;
-    public Transform initialPos2;
-    public Transform initialPos3;
-    public Transform initialPos4;
-    public Transform initialPos5;
-    public Transform initialPos6;
-    
-   //public TMP_Text Laps;
 
-    //public GameObject gameMenu;
+    // Bot Car GameObjects
+    public GameObject[] botCars;
+
+    // Storing initial positions for each bot
+    public Vector3 playerInitialPos=new Vector3(-18f,2.998f,-13f);
+    public Vector3[] initialBotPositions;
+    public Quaternion[] initialBotRotation;
+
     public Button pause;
-    public bool paused;//boolean to get if game is paused
+    public bool paused; // Boolean to get if game is paused
+    public bool restarted=false;
     private bool movingFaster;
-    //variables to store source of audio and two audio clips
-    public  AudioSource source;
-    public  AudioClip accelerate;
-    public  AudioClip idle;
+
+    // Variables to store source of audio and two audio clips
+    public AudioSource source;
+    public AudioClip accelerate;
+    public AudioClip idle;
+
     private float carCurrHeight;
-    //public TMP_Text startCount;
-   
+
     public Vector3 carDirection;
-    // Start is called once before the first execution of Update after the MonoBehaviour is created
+
     void Start()
-{ 
-    instance=this;
+{
+    instance = this;
     paused = false;
-    SetGameState(GAMESTATES.MENU);//starting game in menu 
+    SetGameState(GAMESTATES.MENU); // Starting game in menu
     Debug.Log("Playing idle audio");
-    initialPos1=playerCar.transform;
-    initialPos2=bot1.transform;
-    initialPos3=bot2.transform;
-    initialPos4=bot3.transform;
-    initialPos5=bot4.transform;
-    initialPos6=bot5.transform;
 
-   
-    //startCountDown();
+    // Store initial positions as Vector3
+    //playerInitialPos = playerCar.transform.position; 
 
-    // // Set initial positions for the car and bot
-    // GameObject player= Instantiate(playerCar);
-    // player.transform.position = new Vector3(-129.7f, 5f, -30.4f); // Replace with your specified values.
-    // GameObject bot11= Instantiate(bot1);
-    // bot11.transform.position = new Vector3(-881.9f, -425f, 110f);
-    // GameObject bot22= Instantiate(bot2);
-    // bot22.transform.position= new Vector3(-147.3f,-0.3f,43.9f);
-    // bot22.transform.position= new Vector3(0,-22f,0f);
-}
-public void startGame(){
-  SetGameState(GAMESTATES.PLAYING);//changing game state to playing
+    // Correctly store the initial positions
+    initialBotPositions = new Vector3[botCars.Length];
+    initialBotRotation = new Quaternion[botCars.Length];
 
-  Debug.Log("Switched to playing state");
-  StartCoroutine(StartCountDown());//starting countdown for race to start
-}
-private IEnumerator StartCountDown()
+
+    for (int i = 0; i < botCars.Length; i++)
     {
-        // Show the countdown numbers
+        initialBotPositions[i] = botCars[i].transform.position;
+        initialBotRotation[i] = botCars[i].transform.rotation;
+    }
+
+    //playerInitialPos = playerCar.transform.position; // Store initial position as Vector3
+}
+
+
+    public void startGame()
+    {
+        SetGameState(GAMESTATES.PLAYING); // Changing game state to playing
+
+        Debug.Log("Switched to playing state");
+        StartCoroutine(StartCountDown()); // Starting countdown for race to start
+    }
+
+    private IEnumerator StartCountDown()
+    {
         countDown.gameObject.SetActive(true);
 
         for (int i = 3; i > 0; i--)
         {
+            if (i == 3)
+                countDown.color = Color.red; // Red for 3
+            else if (i == 2)
+                countDown.color = new Color(1f, 0.647f, 0f); // Amber for 2
+            else if (i == 1)
+                countDown.color = Color.green; // Green for 1
+
             countDown.text = i.ToString(); // Display "3", "2", "1"
-            yield return new WaitForSeconds(1f);//wait one sec between each count
+            yield return new WaitForSeconds(1f); // Wait one second
         }
 
+        countDown.color = Color.green;
         countDown.text = "GO!"; // Display "GO!" at the end
         yield return new WaitForSeconds(1f);
 
-        countDown.gameObject.SetActive(false); // Hide the countdown
-        //SetGameState(GAMESTATES.PLAYING); // Transition to playing state
+        countDown.gameObject.SetActive(false);
     }
-public static void SetGameState(GAMESTATES state)
-{
-    gameState = state;
-    Debug.Log(state);
-    if (instance == null) return;
 
-    switch (state) // switch statement to change between game states as specified
+//Metho to switch between game states
+    public static void SetGameState(GAMESTATES state)
     {
-        case GAMESTATES.MENU:
-            if (instance.GameMenuCanvas) instance.GameMenuCanvas.SetActive(true);
-            if (instance.PlayingCanvas) instance.PlayingCanvas.SetActive(false);
-            if (instance.PauseCanvas) instance.PauseCanvas.SetActive(false);
-            if (instance.LeaderBoardCanvas) instance.LeaderBoardCanvas.SetActive(false);
-            CurrentGameState=GAMESTATES.MENU;
-            break;
+        gameState = state;
+        Debug.Log(state);
+        if (instance == null) return; //if instance is null returns
 
-        case GAMESTATES.PLAYING:
-            if (instance.PlayingCanvas) instance.PlayingCanvas.SetActive(true);
-            if (instance.GameMenuCanvas) instance.GameMenuCanvas.SetActive(false);
-            if (instance.PauseCanvas) instance.PauseCanvas.SetActive(false);
-            if (instance.LeaderBoardCanvas) instance.LeaderBoardCanvas.SetActive(false);
-            CurrentGameState=GAMESTATES.PLAYING;
-            break;
+        switch (state)//using switchstatement to activate and ddeactivate state canvaases as needed
+        {
+            case GAMESTATES.MENU:
+                if (instance.GameMenuCanvas) instance.GameMenuCanvas.SetActive(true);
+                if (instance.PlayingCanvas) instance.PlayingCanvas.SetActive(false);
+                if (instance.PauseCanvas) instance.PauseCanvas.SetActive(false);
+                if (instance.LeaderBoardCanvas) instance.LeaderBoardCanvas.SetActive(false);
+                CurrentGameState = GAMESTATES.MENU;//updating current game state
+                break;
 
-        case GAMESTATES.PAUSE:
-            if (instance.PauseCanvas) instance.PauseCanvas.SetActive(true);
-            if (instance.GameMenuCanvas) instance.GameMenuCanvas.SetActive(false);
-            if (instance.PlayingCanvas) instance.PlayingCanvas.SetActive(false);
-            if (instance.LeaderBoardCanvas) instance.LeaderBoardCanvas.SetActive(false);
-            CurrentGameState=GAMESTATES.PAUSE;
-            break;
-        case GAMESTATES.LEADERBOARD:
-            if (instance.LeaderBoardCanvas) instance.LeaderBoardCanvas.SetActive(true);
-            if (instance.PauseCanvas) instance.PauseCanvas.SetActive(false);
-            if (instance.GameMenuCanvas) instance.GameMenuCanvas.SetActive(false);
-            if (instance.PlayingCanvas) instance.PlayingCanvas.SetActive(false);
-            CurrentGameState=GAMESTATES.LEADERBOARD;
-            break;
+            case GAMESTATES.PLAYING:
+                if (instance.PlayingCanvas) instance.PlayingCanvas.SetActive(true);
+                if (instance.GameMenuCanvas) instance.GameMenuCanvas.SetActive(false);
+                if (instance.PauseCanvas) instance.PauseCanvas.SetActive(false);
+                if (instance.LeaderBoardCanvas) instance.LeaderBoardCanvas.SetActive(false);
+                CurrentGameState = GAMESTATES.PLAYING;//updating current game state
+                break;
+
+            case GAMESTATES.PAUSE:
+                if (instance.PauseCanvas) instance.PauseCanvas.SetActive(true);
+                if (instance.GameMenuCanvas) instance.GameMenuCanvas.SetActive(false);
+                if (instance.PlayingCanvas) instance.PlayingCanvas.SetActive(false);
+                if (instance.LeaderBoardCanvas) instance.LeaderBoardCanvas.SetActive(false);
+                CurrentGameState = GAMESTATES.PAUSE;//updating current game state
+                break;
+
+            case GAMESTATES.LEADERBOARD:
+                if (instance.LeaderBoardCanvas) instance.LeaderBoardCanvas.SetActive(true);
+                if (instance.PauseCanvas) instance.PauseCanvas.SetActive(false);
+                if (instance.GameMenuCanvas) instance.GameMenuCanvas.SetActive(false);
+                if (instance.PlayingCanvas) instance.PlayingCanvas.SetActive(false);
+                CurrentGameState = GAMESTATES.LEADERBOARD;//updating current game state
+                break;
+        }
     }
-}
 
-
-    // Update is called once per frame
     void FixedUpdate()
     {
-         if (Input.GetKey(KeyCode.UpArrow))
+        if (Input.GetKey(KeyCode.UpArrow))
         {
             movingFaster = true;
-            changeAudio();
+            changeAudio();//changing audio when car starts going fast
         }
-        else if (Input.GetKeyUp(KeyCode.UpArrow)) // Detect when the UpArrow key is released
+        else if (Input.GetKeyUp(KeyCode.UpArrow))
         {
-        movingFaster = false;
-        changeAudio();
+            movingFaster = false;
+            changeAudio();//changing audio when car is no longer accelerating
         }
         else if (playerCar.GetComponent<Rigidbody>().linearVelocity.magnitude <= 2f && movingFaster)
         {
             movingFaster = false;
             changeAudio();
         }
-         carCurrHeight=playerCar.transform.position.y;
-          if(carCurrHeight > 10f){
+
+        carCurrHeight = playerCar.transform.position.y;
+        if (carCurrHeight > 10f)
+        {
             respawn();
-          }
+        }
     }
-    public void restartGame()
-{
-    Debug.Log("Restart Button Clicked");
 
-    // Reset positions
-    playerCar.transform.position = initialPos1.position;
-    bot1.transform.position = initialPos2.position;
-    bot2.transform.position = initialPos3.position;
-    bot3.transform.position = initialPos4.position;
-    bot4.transform.position = initialPos5.position;
-    bot5.transform.position = initialPos6.position;
-
-    // Reset Rigidbody velocities
-    ResetRigidBody(playerCar);
-    ResetRigidBody(bot1);
-    ResetRigidBody(bot2);
-    ResetRigidBody(bot3);
-    ResetRigidBody(bot4);
-    ResetRigidBody(bot5);
-
-    // Set game state to PLAYING
-    SetGameState(GAMESTATES.PLAYING);
-}
-
-private void ResetRigidBody(GameObject obj)
-{
-    Rigidbody rb = obj.GetComponent<Rigidbody>();
-    if (rb != null)
+    public void restartGame()//method to be called when restart game bbutton is pressed
     {
-        rb.linearVelocity = Vector3.zero;
-        rb.angularVelocity = Vector3.zero;
-    }
-}
+        restarted=true;
+        Debug.Log("Restart Button Clicked");
 
-    public void pauseGame(){
-        Debug.Log("Pause Button CLicked");
-        SetGameState(GAMESTATES.PAUSE);
+        // Reset positions
+        playerCar.transform.position = playerInitialPos;//resetting player car to intial position
+        Debug.Log(botCars.Length);
+
+        //Resetting bot cars back to their initial rotations and positions at the start of the race
+        for (int i = 0; i < botCars.Length; i++)
+        {
+            Debug.Log("Resetting bot " + i + " position to: " + initialBotPositions[i]);
+            botCars[i].transform.position = initialBotPositions[i];
+            botCars[i].transform.rotation=initialBotRotation[i];
+        }
+
+        // Reset Rigidbody velocities
+        ResetRigidBody(playerCar);
+
+        foreach (var bot in botCars)
+        {
+            ResetRigidBody(bot);//resetting all bot cars rigidbodies
+        }
+       StartCoroutine(StartCountDown());
+       //SetGameState(GAMESTATES.PAUSE);
+       SetGameState(GAMESTATES.PLAYING);//setting game state back to playing
     }
+
+    private void ResetRigidBody(GameObject obj)
+    {
+        Rigidbody rb = obj.GetComponent<Rigidbody>();//getting object rigid body
+        if (rb != null)
+        {
+            //resetting velocities to zero
+            rb.linearVelocity = Vector3.zero; 
+            rb.angularVelocity = Vector3.zero;
+        }
+    }
+
+    public void pauseGame()
+    {
+        Debug.Log("Pause Button Clicked");
+        SetGameState(GAMESTATES.PAUSE);//switching game state when pause button is clicked
+    }
+
     public void resumeGame()
     {
-        Debug.Log("Resume Button CLicked");
-    if (CurrentGameState == GAMESTATES.PAUSE)
-    {
-        Debug.Log("Resuming game...");
-        SetGameState(GAMESTATES.PLAYING);
-    }
-    }
-
-    public void quitGame(){
-        Debug.Log("Quit Button CLicked");
-        SetGameState(GAMESTATES.MENU);
-    }
-    public void viewControls()
-    {
-    Debug.Log("Activating ControlCanvas...");
-    if (ControlCanvas != null) ControlCanvas.SetActive(true);
+        Debug.Log("Resume Button Clicked");
+        if (CurrentGameState == GAMESTATES.PAUSE)//resume game by switching state from pause to playing
+        {
+            Debug.Log("Resuming game...");
+            SetGameState(GAMESTATES.PLAYING);
+        }
     }
 
+    public void quitGame()
+    {
+        Debug.Log("Quit Button Clicked");
+        SetGameState(GAMESTATES.MENU);//swithcing to main menu when quit button is clicked
+    }
+
+    // public void viewControls()
+    // {
+    //     Debug.Log("Activating ControlCanvas...");
+    //     if (ControlCanvas != null) ControlCanvas.SetActive(true);
+    // }
+
+//Method to switch between audios as needed
     public void changeAudio()
     {
         if (movingFaster && source.clip != accelerate)
@@ -231,18 +250,17 @@ private void ResetRigidBody(GameObject obj)
         }
         else if (!movingFaster && source.clip != idle)
         {
-             Debug.Log("Playing idle audio");
+            Debug.Log("Playing idle audio");
             source.Stop();
             source.clip = idle;
             source.Play();
         }
     }
-    public void respawn(){
-       
+
+    public void respawn()
+    {
         Debug.Log(carCurrHeight);
-       
-     
-        playerCar.transform.position= new Vector3(playerCar.transform.position.x,0f,playerCar.transform.position.z);
-       
+        //bring car back to ground if it goes too far, simulating downforce
+        playerCar.transform.position = new Vector3(playerCar.transform.position.x, 0f, playerCar.transform.position.z);
     }
 }

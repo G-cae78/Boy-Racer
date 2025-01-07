@@ -25,12 +25,13 @@ public class FrontWheelScript : MonoBehaviour
 
     void Update()
     {
-        HandleMovement();
-        HandleSteering();
+        HandleMovement();//calling script to adjust wheels relative to the cars movement
+        HandleSteering();//calling script to adjust wheel rotation relative to the steering
     }
 
     void HandleMovement()
     {
+        //Moving the wheels relative to the cars movement
         if (Input.GetKey(KeyCode.UpArrow))
         {
             rigid.AddForce(transform.forward * (rigid.mass * Time.fixedDeltaTime * moveForce));
@@ -52,6 +53,7 @@ public class FrontWheelScript : MonoBehaviour
 
     void HandleSteering()
     {
+        //Turning wheels to make game more relaistic as the left and right arrow keys are pressed to simulate a steering wheel
         float steerInput = 0f;
 
         if (Input.GetKey(KeyCode.LeftArrow))
@@ -63,20 +65,7 @@ public class FrontWheelScript : MonoBehaviour
             steerInput = 0.1f;
         }
 
-        frontLeftWheel.localRotation = Quaternion.Euler(0, steerInput * steerAngle, 0);
-        frontRightWheel.localRotation = Quaternion.Euler(0, steerInput * steerAngle, 0);
-    }
-    void isAIControlledCar(){
-        if(waypoint==null){
-            return;
-        }
-        //calculate the direction the AI is moving in to next waypoint
-        Vector3 direction=(waypoint.position-transform.position).normalized;
-        float angle= Vector3.SignedAngle(transform.forward,direction,Vector3.up);
-        float steerInput= Mathf.Clamp(angle /90f,-1f,1f);//normalizing the angle
-
-        //Finally rotating wheels
-        frontLeftWheel.localRotation= Quaternion.Euler(0,steerInput*steerAngle,0);
-        frontRightWheel.localRotation= Quaternion.Euler(0,steerInput*steerAngle,0);
+        frontLeftWheel.localRotation = Quaternion.Euler(0, steerInput * steerAngle, 0);//rotating front left wheel
+        frontRightWheel.localRotation = Quaternion.Euler(0, steerInput * steerAngle, 0);//rotating front left wheel
     }
 }

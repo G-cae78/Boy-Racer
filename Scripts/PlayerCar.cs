@@ -5,11 +5,11 @@ using UnityEngine;
 public class PlayerCar : MonoBehaviour
 {
     public Rigidbody rigid;               // Rigidbody for physics-based movement
-    public float acceleration = 3000f;    // Force applied for forward/backward motion
-    public float maxSpeed = 20f;          // Max speed of the car
+    public float acceleration = 8000f;    // Force applied for forward/backward motion
+    public float maxSpeed = 100f;          // Max speed of the car
     public float turnTorque = 500f;       // Torque applied for turning
-    public float brakeForce = 0.5f;       // Brake strength (0 to 1)
-    public float drag = 100f;               // Drag to simulate friction
+    public float brakeForce = 0.2f;       // Brake strength (0 to 1)
+    public float drag = 10f;               // Drag to simulate friction
 
     void Start()
     {
@@ -25,9 +25,17 @@ public class PlayerCar : MonoBehaviour
 
     void FixedUpdate()
     {
+        // Freeze movement if the game is paused
+    if (GameManagerScript.CurrentGameState == GameManagerScript.GAMESTATES.PAUSE)
+    {
+        rigid.linearVelocity = Vector3.zero;  // Stop all movement
+        rigid.angularVelocity = Vector3.zero;  // Stop rotation
+        return;  // Don't process input or movement when paused
+    }
         // Get input
         float verticalInput = 0f;
         float horizontalInput = 0f;
+        
         if (Input.GetKey(KeyCode.UpArrow)) verticalInput = 1f;    // Forward
         else if (Input.GetKey(KeyCode.DownArrow)){ 
             verticalInput = -1f; // Reverse
@@ -55,4 +63,5 @@ public class PlayerCar : MonoBehaviour
             rigid.angularVelocity = Vector3.Lerp(rigid.angularVelocity, Vector3.zero, brakeForce * Time.fixedDeltaTime);
         }
     }
-}
+    }
+

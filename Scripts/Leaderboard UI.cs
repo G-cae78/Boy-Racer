@@ -1,15 +1,28 @@
-using UnityEngine;
+using System;
 using TMPro;
+using UnityEngine;
 
-    public class LeaderboardUI : MonoBehaviour
+public class LeaderboardUI : MonoBehaviour
 {
     public TMP_Text nameText;
     public TMP_Text positionText;
 
-    public void SetEntryData(string name, string position)
+    public void SetEntryData(string name, int position)
     {
-        nameText.text = name; //initialising name of car data
-        positionText.text = position;// initialising position the car finished
-    }
-}
+        if (nameText != null)
+            nameText.text = name;
+        else
+            Debug.LogError("nameText is not assigned!");
 
+        if (positionText != null)
+            positionText.text = position.ToString();
+        else
+            Debug.LogError("positionText is not assigned!");
+
+
+           Debug.Log($"{name} {position}");
+
+    }
+
+    
+}

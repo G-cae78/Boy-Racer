@@ -6332,7 +6332,7 @@ Transform:
   m_GameObject: {fileID: 3196790338523799168}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: -0.17364825, z: 0, w: 0.9848078}
-  m_LocalPosition: {x: -117.3, y: 3, z: -32.2}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
@@ -6440,10 +6440,11 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   rigid: {fileID: 2633394585674534967}
-  gameCam: {fileID: 0}
-  followSpeed: 1
-  flameParticleSystem: {fileID: 9102726113510852063}
-  countDown: {fileID: 0}
+  acceleration: 3000
+  maxSpeed: 20
+  turnTorque: 500
+  brakeForce: 1500
+  drag: 1
 --- !u!114 &6846687651392540379
 MonoBehaviour:
   m_ObjectHideFlags: 0

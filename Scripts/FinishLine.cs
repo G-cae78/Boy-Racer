@@ -6,6 +6,8 @@ using Unity.VisualScripting;
 public class FinishLine : MonoBehaviour
 {
     public int totalLaps = 1; // Total laps to start with
+    public LeaderboardTable leaderboardTable; // Assign in the Inspector
+
     private int playerLaps=1;
 //    private int aiLapsRemaining=2;
      public TMP_Text Laps;// Variable to display number of laps on canvas
@@ -49,15 +51,20 @@ public class FinishLine : MonoBehaviour
             playerLaps++;//increase lap count after player crosses finish line
             Debug.Log($"Player car: {playerLaps} laps completed.");
 
-            if (playerLaps > totalLaps) //if player has completed all laps
+            if (playerLaps == totalLaps+1) //if player has completed all laps
             {
                 Debug.Log("Player car finished all laps!");
                 finishingOrder.Add(CarType.PlayerCar.ToString());//add player to finish order list to determine finish pos
+                Debug.Log($"Added {CarType.PlayerCar.ToString()} to finishingOrder. Current count: {finishingOrder.Count}");
                 // Update the leaderboard
             LeaderboardTable leaderboardTable = FindFirstObjectByType<LeaderboardTable>();//find leaderboard object in canvas
             if (leaderboardTable != null)
             {
+                Debug.Log("leaderboardTable not null");
                 //leaderboardTable.UpdateLeaderboard(finishingOrder);
+                foreach(var entry in finishingOrder){
+                    Debug.Log(entry);
+                }
                 leaderboardTable.UpdateLeaderBoard(finishingOrder);//update leaderboard with current finishng order
             }
         else
@@ -83,6 +90,9 @@ public class FinishLine : MonoBehaviour
                     {
                         Debug.Log($"{carType} finished all laps!");
                         finishingOrder.Add(carType.ToString());//if car has finished race add to finish list to determine order
+                        foreach (string entry in finishingOrder){
+                          Debug.Log(entry);
+                        }
                     }
 
                     break; // Exit loop once the matching car is found
